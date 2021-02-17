@@ -34,7 +34,6 @@ def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
         plt.tight_layout()
     plt.savefig(path, format=fig_extension, dpi=resolution)
 
-#%%
 from sklearn.datasets import fetch_openml
 
 mnist = fetch_openml('mnist_784', version=1)
@@ -53,7 +52,61 @@ plt.axis("off")
 plt.show()
 
 # %% Splitting into test and training set
-
 X_train, X_test, y_train, y_test = X[:60000], X[60000:], y[:60000], y[60000:]
 
-# %% Binary Classifier
+# %% Binary Classifier - identifies two classes
+# let's first try to classify the number 5 only
+y_train_5 = (y_train == 5)
+y_test_5 = (y_test == 5)
+
+# %% Stochastic Gradient Descent
+from sklearn.linear_model import SGDClassifier
+
+sgd_clf = SGDClassifier(random_state=42)
+sgd_clf.fit(X_train, y_train_5)
+
+# %% Cross-validation of model
+from sklearn.model_selection import cross_val_score
+
+cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring='accuracy')
+# the method is not good for this case, as only 10% of the test set is 
+# comprised of 5s. Data is skewed. Scoring by accuracy is not suitable.
+'''
+Using Stratified K Fold
+from sklearn.model_selection import StratifiedKFold
+from sklearn.base import clone
+
+skfolds = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+
+for train_index, test_index in skfolds.split(X_train, y_train_5):
+    clone_clf = clone(sgd_clf)
+    X_train_folds = X_train[train_index]
+    y_train_folds = y_train_5[train_index]
+    X_test_fold = X_train[test_index]
+    y_test_fold = y_train_5[test_index]
+
+    clone_clf.fit(X_train_folds, y_train_folds)
+    y_pred = clone_clf.predict(X_test_fold)
+    n_correct = sum(y_pred == y_test_fold)
+    print(n_correct / len(y_pred))
+'''
+# %% Confusion Matrix
+from sklearn.model_selection import cross_val_predict 
+from sklearn.metrics import confusion_matrix
+
+y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
+confusion_matrix(y_train_5, y_train_pred)
+# %% Precision and Recall - another way to evaluate performance of model
+from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import f1_score
+
+# when it predicts a 5, its only right 83% of the time
+precision_score = precision_score(y_train_5, y_train_pred)
+print(precision_score) 
+# it is only able to detect 65% of the 5s in the training set
+recall_score = recall_score(y_train_5, y_train_pred)
+print(recall_score)
+# combine precision and recall score to create f1 score metric
+print(f1_score(y_train_5, y_train_pred))
+print(2/(1/precision_score + 1/recall_score)) # precision score is harmonic mean. Will be the same as above.
+# %% Findin the most optimum threshold for the decision function
