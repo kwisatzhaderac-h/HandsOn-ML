@@ -151,4 +151,5 @@ plt.plot([0, recall_90_precision], [0.9, 0.9], 'r:')
 plt.plot(recall_90_precision, 0.9, 'ro')
 save_fig('precision_vs_recall_plot')
 plt.show()
-# %%
+
+# %% Receiver Operating Characteristic (ROC) Curve
