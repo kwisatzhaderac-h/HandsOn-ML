@@ -109,4 +109,46 @@ print(recall_score)
 # combine precision and recall score to create f1 score metric
 print(f1_score(y_train_5, y_train_pred))
 print(2/(1/precision_score + 1/recall_score)) # precision score is harmonic mean. Will be the same as above.
+
 # %% Findin the most optimum threshold for the decision function
+from sklearn.metrics import precision_recall_curve
+
+y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3,
+                            method='decision_function')
+precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
+# %%
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
+    plt.plot(thresholds, precisions[:-1], 'b--', label='Precision')
+    plt.plot(thresholds, recalls[:-1], 'g', label='Recall')
+    plt.xlabel('Threshold')
+    plt.legend()
+    plt.grid(b=bool)
+    plt.axis([-50000, 50000, 0, 1]) 
+
+plt.figure(figsize=(8, 4))
+recall_90_precision = recalls[np.argmax(precisions >= 0.90)]
+threshold_90_precision = thresholds[np.argmax(precisions >= 0.90)]
+plot_precision_recall_vs_threshold(precisions, recalls, thresholds)
+plt.plot([threshold_90_precision, threshold_90_precision], [0., 0.9], "r:")                 
+plt.plot([-50000, threshold_90_precision], [0.9, 0.9], "r:")                                
+plt.plot([-50000, threshold_90_precision], [recall_90_precision, recall_90_precision], "r:")
+plt.plot([threshold_90_precision], [0.9], "ro")                                             
+plt.plot([threshold_90_precision], [recall_90_precision], "ro")                             
+save_fig("precision_recall_vs_threshold_plot")                                              
+plt.show()
+
+# %%
+def plot_precision_vs_recall(precisions, recalls):
+    plt.plot(recalls, precisions)
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.grid(b=bool)
+    plt.axis([0, 1, 0, 1])
+
+plot_precision_vs_recall(precisions, recalls)
+plt.plot([recall_90_precision, recall_90_precision], [0, 0.9], 'r:')
+plt.plot([0, recall_90_precision], [0.9, 0.9], 'r:')
+plt.plot(recall_90_precision, 0.9, 'ro')
+save_fig('precision_vs_recall_plot')
+plt.show()
+# %%
